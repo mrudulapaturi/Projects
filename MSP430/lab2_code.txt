@@ -1,0 +1,165 @@
+/*LAB2- ADC:
+ * The MSP430 reads analog voltages from a potentiometer
+ * The LED Bar Properly displays the scaled voltage representation
+ */
+#include <msp430.h> 
+#include <msp430g2553.h>
+#define LED0 BIT0
+#define LED1 BIT1
+#define LED2 BIT2
+#define LED3 BIT3
+#define LED4 BIT4
+#define LED5 BIT6
+#define LED6 BIT7
+#define ZEROPER 0
+#define TENPER 102.4
+#define TWENTYPER 204.8
+#define THIRTYPER 307.2
+#define FORTYPER 409.6
+#define FIFTYPER 512
+#define SIXTYPER 614.4
+#define SEVENTYPER 716.8
+#define EIGHTYPER 819.2
+#define NINETYPER 921.6
+#define HUNDREDPER 1024
+
+void configureAdc(void){ //To configure the ADC Channel
+
+   ADC10CTL1 = INCH_5 + ADC10DIV_3 ; // To select channel 5 and ADC10CLK/4
+
+   ADC10CTL0 = SREF_0 + ADC10SHT_3 + ADC10ON + ADC10IE; //Vcc & Vss as reference volt
+
+   ADC10AE0 |= BIT5; //P1.5 ADC pin
+
+   }
+
+void main(void){
+
+   WDTCTL = WDTPW + WDTHOLD; // Stop Watchdog timer
+
+   BCSCTL1 = CALBC1_1MHZ; // Set range
+
+   DCOCTL = CALDCO_1MHZ;
+
+   BCSCTL2 &= ~(DIVS_3); // SMCLK = DCO = 1MHz
+
+   float value=0.0;
+
+   P1DIR |= LED0 + LED1 + LED2 + LED3 + LED4 + LED5 + LED6;
+   P2DIR |= 0X07;
+
+   P1SEL |= BIT5; //ADC Input pin P1.5
+
+   P1OUT &= ~(LED0 + LED1 + LED2 + LED3 + LED4 + LED5 + LED6); //to turn off all LEDs 
+   P2OUT &= ~(0x07);
+
+   configureAdc();
+
+   __enable_interrupt(); // For enabling the interrupt.
+
+   while(1){
+
+      __delay_cycles(1000); // Wait for ADC Ref to settle
+
+      ADC10CTL0 |= ENC + ADC10SC; // To start sampling and conversion
+
+      __bis_SR_register(CPUOFF + GIE); // LPM0 with interrupts enabled
+
+      value = ADC10MEM; //ADC final value
+
+ /*loop to check the input voltage and glow the LEDs accordingly*/
+
+      if (value<=ZEROPER){
+
+          P1OUT &= ~(LED0 + LED1 + LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+
+          }
+
+      else if (value>ZEROPER && value<=TENPER){
+
+          P1OUT &= ~(LED0 + LED1 + LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+          P1OUT |= LED0;
+          }
+
+      else if (value>TENPER && value<=TWENTYPER){
+
+          P1OUT &= ~(LED0 + LED1+ LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+          P1OUT |= LED0 + LED1;
+          }
+
+      else if (value>TWENTYPER && value<=THIRTYPER){
+
+          P1OUT &= ~(LED0 + LED1+ LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+          P1OUT |= LED0 + LED1 + LED2;
+          }
+
+      else if (value>THIRTYPER && value<=FORTYPER){
+
+          P1OUT &= ~(LED0 + LED1+ LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+          P1OUT |= LED0 + LED1 + LED2 + LED3;
+          }
+
+      else if (value>FORTYPER && value<=FIFTYPER){
+
+          P1OUT &= ~(LED0 + LED1+ LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+          P1OUT |= LED0 + LED1 + LED2 + LED3 + LED4;
+          }
+
+      else if (value>FIFTYPER && value<=SIXTYPER){
+
+          P1OUT &= ~(LED0 + LED1+ LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+          P1OUT |= LED0 + LED1 + LED2 + LED3 + LED4 + LED5;
+          }
+
+      else if (value>SIXTYPER && value<=SEVENTYPER){
+
+          P1OUT &= ~(LED0 + LED1+ LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+          P1OUT |= LED0 + LED1 + LED2 + LED3 + LED4 + LED5 + LED6;
+          }
+
+      else if (value>SEVENTYPER && value<=EIGHTYPER){
+
+          P1OUT &= ~(LED0 + LED1+ LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+          P1OUT |= LED0 + LED1 + LED2 + LED3 + LED4 + LED5 + LED6;
+          P2OUT |= 0x01;
+          }
+
+      else if (value>EIGHTYPER && value<=NINETYPER){
+
+          P1OUT &= ~(LED0 + LED1+ LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+          P1OUT |= LED0 + LED1 + LED2 + LED3 + LED4 + LED5 + LED6;
+          P2OUT |= 0x03;
+          }
+
+      else if (value>NINETYPER && value<=HUNDREDPER){
+
+          P1OUT &= ~(LED0 + LED1+ LED2 + LED3 + LED4 + LED5 + LED6);
+          P2OUT &= ~(0x07);
+          P1OUT |= LED0 + LED1 + LED2 + LED3 + LED4 + LED5 + LED6;
+          P2OUT |= 0x07;
+          }
+   }
+
+}
+
+ // ADC10 interrupt service routine
+
+  #pragma vector=ADC10_VECTOR
+  __interrupt void ADC10_ISR (void){
+
+    __bic_SR_register_on_exit(CPUOFF); // Return to active mode
+
+  }
+
+
+
